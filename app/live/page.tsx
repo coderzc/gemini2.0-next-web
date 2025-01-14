@@ -378,26 +378,6 @@ const LivePage: React.FC = () => {
 									))}
 								</Flex>
 							</div>
-							<Flex justify='center'>
-								<Button
-									color='primary'
-									variant={connected ? 'outlined' : 'solid'}
-									onClick={
-										connected ? handleDisconnect : connect
-									}
-									icon={
-										connected ? (
-											<PauseCircleOutlined />
-										) : (
-											<PoweroffOutlined />
-										)
-									}
-								>
-									{connected
-										? 'Disconnect'
-										: 'Click me to start !'}
-								</Button>
-							</Flex>
 							<div
 								className='px-5 py-2'
 								style={{

@@ -16,7 +16,6 @@ import {
 	Collapse,
 	Input,
 	Flex,
-	Button,
 	Select,
 	Tag,
 	Checkbox,
@@ -181,7 +180,6 @@ const LivePage: React.FC = () => {
 		config,
 		setConfig,
 		connected,
-		connect,
 		disconnect,
 		currentBotMessage,
 		currentUserMessage,
@@ -290,11 +288,6 @@ const LivePage: React.FC = () => {
 		background: colorFillAlter,
 		borderRadius: borderRadiusLG,
 		border: 'none',
-	};
-
-	const handleDisconnect = () => {
-		setVideoStream(null);
-		disconnect();
 	};
 
 	return (

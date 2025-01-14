@@ -1,6 +1,6 @@
 'use client';
 import React, { useState, useEffect } from 'react';
-import { AudioOutlined, LeftOutlined, GithubOutlined, PauseCircleOutlined, PoweroffOutlined } from '@ant-design/icons';
+import { AudioOutlined, LeftOutlined, PauseCircleOutlined, PoweroffOutlined } from '@ant-design/icons';
 import type { MenuProps } from 'antd';
 import { Layout, Menu, theme, ConfigProvider, Flex, Button, Input, Form, Tooltip } from 'antd';
 import clsx from 'clsx';
@@ -182,15 +182,6 @@ const GlobalLayout: React.FC<{
 
 	const handleMenuClick: MenuProps['onClick'] = (e) => {
 		router.push(e.key);
-	};
-
-	const handleSubMenuClick: MenuProps['onClick'] = (e) => {
-		if (e.key === '/github') {
-			window.open(
-				'https://github.com/ElricLiu/Gemini-Next-Web',
-				'_blank'
-			);
-		}
 	};
 
 	const uri = host ? `wss://${host}/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent` : undefined;

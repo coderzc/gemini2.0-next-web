@@ -172,6 +172,7 @@ const LivePage: React.FC = () => {
 		},
 	} = theme.useToken();
 	const videoRef = useRef<HTMLVideoElement>(null);
+	const messagesEndRef = useRef<HTMLDivElement>(null);
 	// either the screen capture, the video or null, if null we hide it
 	const [videoStream, setVideoStream] = useState<MediaStream | null>(null);
 
@@ -180,7 +181,6 @@ const LivePage: React.FC = () => {
 		config,
 		setConfig,
 		connected,
-		disconnect,
 		currentBotMessage,
 		currentUserMessage,
 	} = useLiveAPIContext();
@@ -290,6 +290,14 @@ const LivePage: React.FC = () => {
 		border: 'none',
 	};
 
+	const scrollToBottom = () => {
+		messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+	};
+
+	useEffect(() => {
+		scrollToBottom();
+	}, [messages]);
+
 	return (
 		<Layout
 			style={{
@@ -370,6 +378,7 @@ const LivePage: React.FC = () => {
 									{messages.map((m) => (
 										<MessageItem key={m?.id} message={m} />
 									))}
+									<div ref={messagesEndRef} />
 								</Flex>
 							</div>
 							<div

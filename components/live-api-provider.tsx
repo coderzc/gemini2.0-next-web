@@ -1,7 +1,7 @@
 import { LiveAPIProvider as Provider } from '@/vendor/contexts/LiveAPIContext';
 
 const LiveAPIProvider = ({ children }: { children: React.ReactNode }) => {
-	const host = 'generativelanguage.googleapis.com';
+	const host = process.env.NEXT_PUBLIC_GEMINI_HOST || 'coderzc-gemini-play.deno.dev';
 	const uri = `wss://${host}/ws/google.ai.generativelanguage.v1alpha.GenerativeService.BidiGenerateContent`;
 
 	const API_KEY = (process.env.NEXT_PUBLIC_GEMINI_API_KEY as string) || '';

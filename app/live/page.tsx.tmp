@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { UserOutlined, RobotOutlined } from '@ant-design/icons';
 import MediaButtons from '@/components/media-buttons';
 import { useLiveAPIContext } from '@/vendor/contexts/LiveAPIContext';
@@ -201,7 +201,7 @@ const LivePage: React.FC = () => {
 		defaultValue: process.env.NEXT_PUBLIC_AZURE_SPEECH_KEY || '',
 	});
 	const [azureRegion, setAzureRegion] = useLocalStorageState('azure-speech-region', {
-		defaultValue: process.env.NEXT_PUBLIC_AZURE_SPEECH_REGION || 'eastasia',
+		defaultValue: process.env.NEXT_PUBLIC_AZURE_SPEECH_REGION || '',
 	});
 
 	const [tools, setTools] = useLocalStorageState<ToolsState>('tools', {
@@ -220,114 +220,30 @@ const LivePage: React.FC = () => {
 	});
 
 	const [messages, setMessages] = useState<MessageType[]>([]);
-	const { speak } = useSpeechService({
+
+	const { speak, speaking } = useSpeechService({
 		subscriptionKey: azureKey,
 		region: azureRegion,
-		voice: voice,
 	});
-
-	const ttsQueueRef = useRef<string[]>([]);
-	const processingRef = useRef(false);
-	const [lastSpokenText, setLastSpokenText] = useState<string>('');
-	const accumulatedTextRef = useRef<string>('');
-	const turnCompleteTimeoutRef = useRef<NodeJS.Timeout>();
-
-	// 检查文本是否实质相同（忽略标点符号和空格）
-	const isSimilarText = useCallback((text1: string, text2: string) => {
-		const normalize = (text: string) => text.replace(/[.,。，！？!?]\s*/g, '').trim();
-		return normalize(text1) === normalize(text2);
-	}, []);
-
-	// 处理 TTS 队列的函数
-	const processTTSQueue = useCallback(async () => {
-		if (processingRef.current || !ttsQueueRef.current.length) return;
-
-		processingRef.current = true;
-		const textToSpeak = ttsQueueRef.current[0];
-		
-		try {
-			await speak(textToSpeak);
-			setLastSpokenText(textToSpeak);
-			ttsQueueRef.current = ttsQueueRef.current.slice(1);
-		} catch (error) {
-			console.error('TTS failed:', error);
-		} finally {
-			processingRef.current = false;
-			// 如果队列中还有内容，继续处理
-			if (ttsQueueRef.current.length > 0) {
-				processTTSQueue();
-			}
-		}
-	}, [speak]);
-
-	// 监听 turncomplete 事件
-	useEffect(() => {
-		if (!client) return;
-
-		const onTurnComplete = () => {
-			if (turnCompleteTimeoutRef.current) {
-				clearTimeout(turnCompleteTimeoutRef.current);
-			}
-			
-			turnCompleteTimeoutRef.current = setTimeout(() => {
-				const text = accumulatedTextRef.current;
-				if (!text?.trim()) return;
-
-				const isSimilarToLastSpoken = isSimilarText(text, lastSpokenText);
-				if (isSimilarToLastSpoken) return;
-
-				const isSimilarToQueued = ttsQueueRef.current.some(queuedText => 
-					isSimilarText(text, queuedText)
-				);
-				if (isSimilarToQueued) return;
-
-				ttsQueueRef.current = [...ttsQueueRef.current, text];
-				processTTSQueue();
-				accumulatedTextRef.current = '';
-			}, 500);
-		};
-
-		client.on('turncomplete', onTurnComplete);
-		return () => {
-			client.off('turncomplete', onTurnComplete);
-			if (turnCompleteTimeoutRef.current) {
-				clearTimeout(turnCompleteTimeoutRef.current);
-			}
-		};
-	}, [client, isSimilarText, lastSpokenText, processTTSQueue]);
-
-	// 处理消息内容更新
-	useEffect(() => {
-		if (!currentBotMessage?.serverContent || !isModelTurn(currentBotMessage.serverContent)) {
-			return;
-		}
-		const text = currentBotMessage.serverContent.modelTurn.parts
-			.map((p: Part) => p.text)
-			.join('');
-		accumulatedTextRef.current = text;
-	}, [currentBotMessage]);
-
-	// 监听语音配置变化
-	useEffect(() => {
-		if (turnCompleteTimeoutRef.current) {
-			clearTimeout(turnCompleteTimeoutRef.current);
-		}
-		accumulatedTextRef.current = '';
-		ttsQueueRef.current = [];
-		processingRef.current = false;
-	}, [voice, azureKey, azureRegion]);
 
 	const handleSubmit = () => {
 		if (!textInput.trim()) return;
+		
 		client.send([{ text: textInput }]);
 		setTextInput('');
 	};
 
 	useEffect(() => {
+		console.log('currentBotMessage', currentBotMessage);
 		if (currentBotMessage) {
 			setMessages((messages) => {
-				if (messages.filter((m) => m?.id === currentBotMessage?.id).length > 0) {
-					return messages.map((m) => m?.id === currentBotMessage?.id ? currentBotMessage : m);
+				if (
+					messages.filter((m) => m?.id === currentBotMessage?.id)
+						.length > 0
+				) {
+					return messages.map((m) =>
+						m?.id === currentBotMessage?.id ? currentBotMessage : m
+					);
 				} else {
 					return [...messages, currentBotMessage];
 				}
@@ -336,10 +252,18 @@ const LivePage: React.FC = () => {
 	}, [currentBotMessage]);
 
 	useEffect(() => {
+		console.log('currentUserMessage', currentUserMessage);
 		if (currentUserMessage) {
 			setMessages((messages) => {
-				if (messages.filter((m) => m?.id === currentUserMessage?.id).length > 0) {
-					return messages.map((m) => m?.id === currentUserMessage?.id ? currentUserMessage : m);
+				if (
+					messages.filter((m) => m?.id === currentUserMessage?.id)
+						.length > 0
+				) {
+					return messages.map((m) =>
+						m?.id === currentUserMessage?.id
+							? currentUserMessage
+							: m
+					);
 				} else {
 					return [...messages, currentUserMessage];
 				}
@@ -347,16 +271,27 @@ const LivePage: React.FC = () => {
 		}
 	}, [currentUserMessage]);
 
+	console.log('messages', messages);
+
 	useEffect(() => {
+		const speechConfig = {
+			voiceConfig: {
+				prebuiltVoiceConfig: {
+					voiceName: voice,
+				},
+			},
+		};
 		const generationConfig = {
 			...config?.generationConfig,
-			responseModalities: 'text',
+			speechConfig,
+			responseModalities: ['text', 'audio'],
 		} as typeof config.generationConfig;
 		const systemInstruction = prompt
 			? { parts: [{ text: prompt }] }
 			: undefined;
 		setConfig({ ...config, generationConfig, systemInstruction });
-	}, [connected, prompt, model, config, setConfig]);
+		// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [connected, prompt, model, voice]);
 
 	const panelStyle: React.CSSProperties = {
 		background: colorFillAlter,
@@ -371,6 +306,17 @@ const LivePage: React.FC = () => {
 	useEffect(() => {
 		scrollToBottom();
 	}, [messages]);
+
+	useEffect(() => {
+		if (currentBotMessage?.serverContent && isModelTurn(currentBotMessage.serverContent)) {
+			const text = currentBotMessage.serverContent.modelTurn.parts
+				.map((p: Part) => p.text)
+				.join('');
+			if (text && !speaking) {
+				speak(text).catch(console.error);
+			}
+		}
+	}, [currentBotMessage, speak, speaking]);
 
 	return (
 		<Layout

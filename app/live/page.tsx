@@ -1,7 +1,6 @@
 'use client';
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { UserOutlined, RobotOutlined } from '@ant-design/icons';
-import { PauseCircleOutlined, PoweroffOutlined } from '@ant-design/icons';
 import MediaButtons from '@/components/media-buttons';
 import { useLiveAPIContext } from '@/vendor/contexts/LiveAPIContext';
 import {
@@ -12,12 +11,12 @@ import {
 import { base64sToArrayBuffer, pcmBufferToBlob } from '@/vendor/lib/utils';
 
 import {
-	Button,
 	Layout,
 	theme,
 	Collapse,
 	Input,
 	Flex,
+	Button,
 	Select,
 	Tag,
 	Checkbox,
@@ -221,6 +220,8 @@ const LivePage: React.FC = () => {
 	const [messages, setMessages] = useState<MessageType[]>([]);
 
 	const handleSubmit = () => {
+		if (!textInput.trim()) return;
+		
 		client.send([{ text: textInput }]);
 		setTextInput('');
 	};

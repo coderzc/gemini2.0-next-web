@@ -27,16 +27,6 @@ function getItem(
 	} as MenuItem;
 }
 
-const items: MenuItem[] = [
-	getItem(
-		<span>Stream Realtime</span>,
-		'/live',
-		<AudioOutlined />
-	),
-];
-
-const subItems: MenuItem[] = [getItem('Github', '/github', <GithubOutlined />)];
-
 const menuStyles = {
 	menu: {
 		background: 'transparent',
@@ -298,12 +288,15 @@ const GlobalLayout: React.FC<{
 							<div>
 								<Menu
 									mode='inline'
-									items={subItems}
-									onClick={handleSubMenuClick}
-									style={{
-										background: colorBgLayout,
-										borderInlineEnd: 'none',
-									}}
+									items={[{
+										key: '/live',
+										icon: <AudioOutlined />,
+										label: 'Stream Realtime',
+										className: pathname === '/live' ? 'ant-menu-item-selected' : ''
+									}]}
+									onClick={handleMenuClick}
+									selectedKeys={[pathname]}
+									style={{ ...menuStyles.menu, background: colorBgLayout }}
 								/>
 								<div
 									onClick={() => setCollapsed(!collapsed)}
